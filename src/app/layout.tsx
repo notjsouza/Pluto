@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar";
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Smart Financial Coach',
+  title: 'Pluto',
   description: 'Your personal financial coaching app',
 };
 

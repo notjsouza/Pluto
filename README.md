@@ -1,6 +1,6 @@
 Youtube Demo
 
-[![Watch the video](img.youtube.com/vi/qrPbmtIxojU.png)]([https://youtu.be/qrPbmtIxojU])
+[![Watch the video]https://img.youtube.com/vi/qrPbmtIxojU/0.png)]([https://youtu.be/qrPbmtIxojU])
 
 Design Doc
 

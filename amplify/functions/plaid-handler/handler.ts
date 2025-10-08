@@ -100,7 +100,7 @@ export const handler: Handler<LambdaFunctionUrlEvent, LambdaFunctionUrlResponse>
           user: {
             client_user_id: userId,
           },
-          client_name: 'Smart Financial Coach',
+          client_name: 'Pluto',
           products: [Products.Transactions],
           country_codes: [CountryCode.Us],
           language: 'en',

@@ -32,7 +32,7 @@ function Login() {
             Welcome Back
           </h2>
           <p className="text-gray-600">
-            Sign in to access your Smart Financial Coach dashboard
+            Sign in to access your Pluto dashboard
           </p>
         </div>
 
