@@ -1,11 +1,5 @@
 # YouTube Demo
 
-<<<<<<< HEAD
-[![Watch the video]https://img.youtube.com/vi/qrPbmtIxojU/0.png)]([https://youtu.be/qrPbmtIxojU])
-=======
----
->>>>>>> 6df9caffceed6a7db0f68a91932708e83d74a246
-
 [![Watch the video](https://img.youtube.com/vi/qrPbmtIxojU/0.jpg)](https://youtu.be/qrPbmtIxojU)
 
 ---
