@@ -1,6 +1,6 @@
 # YouTube Demo
 
-[![Watch the video](https://img.youtube.com/vi/qrPbmtIxojU/0.jpg)](https://youtu.be/qrPbmtIxojU)
+[![Demo video link](https://img.youtube.com/vi/qrPbmtIxojU/0.jpg)](https://youtu.be/qrPbmtIxojU)
 
 ---
 
