@@ -115,6 +115,46 @@ function Dashboard() {
   const goToPrevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
   const goToPage = (page: number) => setCurrentPage(Math.max(1, Math.min(page, getTotalPages())));
 
+  const getPaginationRange = () => {
+    const totalPages = getTotalPages();
+    const delta = 1; // Number of pages to show on each side of current page
+    const range: (number | string)[] = [];
+    
+    if (totalPages <= 7) {
+      // Show all pages if 7 or fewer
+      for (let i = 1; i <= totalPages; i++) {
+        range.push(i);
+      }
+    } else {
+      // Always show first page
+      range.push(1);
+      
+      // Calculate start and end of middle range
+      const start = Math.max(2, currentPage - delta);
+      const end = Math.min(totalPages - 1, currentPage + delta);
+      
+      // Add left ellipsis if needed
+      if (start > 2) {
+        range.push('...');
+      }
+      
+      // Add middle pages
+      for (let i = start; i <= end; i++) {
+        range.push(i);
+      }
+      
+      // Add right ellipsis if needed
+      if (end < totalPages - 1) {
+        range.push('...');
+      }
+      
+      // Always show last page
+      range.push(totalPages);
+    }
+    
+    return range;
+  };
+
   const getMonthlyFinancials = () => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -256,14 +296,14 @@ function Dashboard() {
               </div>
               <div className="space-y-4">
                 {getCombinedTransactions().map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    <div className="flex items-center space-x-3">
-                      <div>
-                        <p className="font-medium text-gray-900">{transaction.description}</p>
+                  <div key={transaction.id} className="flex items-center justify-between gap-4 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-900 truncate">{transaction.description}</p>
                         <p className="text-sm text-gray-500">{transaction.date}</p>
                       </div>
                     </div>
-                    <p className={`font-semibold ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <p className={`font-semibold whitespace-nowrap flex-shrink-0 ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {transaction.amount > 0 ? '+' : ''}{formatCurrency(transaction.amount)}
                     </p>
                   </div>
@@ -286,18 +326,24 @@ function Dashboard() {
                     </button>
                     
                     <div className="flex items-center space-x-1">
-                      {Array.from({ length: getTotalPages() }, (_, i) => i + 1).map((page) => (
-                        <button
-                          key={page}
-                          onClick={() => goToPage(page)}
-                          className={`px-3 py-1 rounded text-sm ${
-                            currentPage === page
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          }`}
-                        >
-                          {page}
-                        </button>
+                      {getPaginationRange().map((page, index) => (
+                        typeof page === 'number' ? (
+                          <button
+                            key={page}
+                            onClick={() => goToPage(page)}
+                            className={`px-3 py-1 rounded text-sm ${
+                              currentPage === page
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ) : (
+                          <span key={`ellipsis-${index}`} className="px-2 text-gray-500">
+                            {page}
+                          </span>
+                        )
                       ))}
                     </div>
                     
@@ -333,12 +379,6 @@ function Dashboard() {
           </div>
 
           <div>
-            {(() => {
-              if (plaidTransactions.length === 0) {
-                return <div className="text-gray-500">No transactions available for analysis.</div>;
-              }
-              return null;
-            })()}
             {plaidTransactions.length > 0 ? (
               <div>
                 <SubscriptionDetector 
