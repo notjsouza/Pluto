@@ -1,4 +1,4 @@
-const AI_HANDLER_URL = process.env.NEXT_PUBLIC_AI_HANDLER_URL || 'https://your-ai-lambda-url.lambda-url.us-west-1.on.aws';
+import { CONFIG } from './constants';
 
 export interface EnhancedInsight {
   id: string;
@@ -43,7 +43,7 @@ export class OpenAIFinancialService {
 
   public async isAvailable(): Promise<boolean> {
     try {
-      const url = `${AI_HANDLER_URL}/health`;      
+      const url = `${CONFIG.AI_HANDLER_URL}/health`;      
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -67,7 +67,7 @@ export class OpenAIFinancialService {
 
   public async generateEnhancedInsights(data: FinancialAnalysisData): Promise<EnhancedInsight[]> {
     try {
-      const response = await fetch(`${AI_HANDLER_URL}/analyze`, {
+      const response = await fetch(`${CONFIG.AI_HANDLER_URL}/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,7 +92,7 @@ export class OpenAIFinancialService {
 
   public async askFinancialQuestion(question: string, context: FinancialAnalysisData): Promise<string> {
     try {
-      const response = await fetch(`${AI_HANDLER_URL}/ask`, {
+      const response = await fetch(`${CONFIG.AI_HANDLER_URL}/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
