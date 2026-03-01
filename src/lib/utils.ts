@@ -5,6 +5,7 @@ export const formatCurrency = (amount: number): string => {
 };
 
 export const getProgressPercentage = (current: number, target: number): number => {
+  if (target === 0) return 0;
   return Math.min((current / target) * 100, 100);
 };
 

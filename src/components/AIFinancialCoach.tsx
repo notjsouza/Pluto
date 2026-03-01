@@ -137,7 +137,9 @@ export default function AIFinancialCoach({
     }
 
     const monthlySubscriptionTotal = subscriptions.reduce((sum, sub) => sum + sub.amount, 0);
-    const subscriptionPercentage = (monthlySubscriptionTotal / totalMonthlySpending) * 100;
+    const subscriptionPercentage = totalMonthlySpending > 0
+      ? (monthlySubscriptionTotal / totalMonthlySpending) * 100
+      : 0;
 
     if (subscriptionPercentage > 30) {
       generatedInsights.push({
@@ -233,7 +235,8 @@ export default function AIFinancialCoach({
   };
 
   const handleAskAI = async () => {
-    if (!aiQuestion.trim() || !openaiService.isAvailable()) return;
+    // isAiAvailable is the resolved boolean state — isAvailable() is async and must not be called here
+    if (!aiQuestion.trim() || !isAiAvailable) return;
     
     setIsAskingAI(true);
     try {
@@ -355,6 +358,7 @@ export default function AIFinancialCoach({
                   }`}>
                     {insight.priority.charAt(0).toUpperCase() + insight.priority.slice(1)} Priority
                   </span>
+                  {getSourceBadge(insight.source)}
                   {insight.actionable && (
                     <span className="text-xs text-blue-600 font-medium">Actionable</span>
                   )}
@@ -362,6 +366,34 @@ export default function AIFinancialCoach({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {isAiAvailable && useAI && (
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Ask Your AI Coach</h3>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={aiQuestion}
+              onChange={(e) => setAiQuestion(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
+              placeholder="e.g. How can I reduce my subscription spending?"
+              className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              onClick={handleAskAI}
+              disabled={isAskingAI || !aiQuestion.trim()}
+              className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 text-white rounded-lg transition-colors whitespace-nowrap"
+            >
+              {isAskingAI ? 'Thinking...' : 'Ask'}
+            </button>
+          </div>
+          {aiResponse && (
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-900 whitespace-pre-wrap">{aiResponse}</p>
+            </div>
+          )}
         </div>
       )}
 

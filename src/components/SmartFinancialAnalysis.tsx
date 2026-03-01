@@ -40,9 +40,10 @@ export default function SmartFinancialAnalysis({ transactions }: SmartFinancialA
     }));
   };
 
+  // In Plaid: positive amounts = expenses
   const totalMonthlySpending = transactions
-    .filter(t => t.amount < 0)
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    .filter(t => t.amount > 0)
+    .reduce((sum, t) => sum + t.amount, 0);
 
   useEffect(() => {
     if (transactions.length > 0) {
@@ -85,18 +86,27 @@ function SubscriptionDetectorWithCallback({
   onSubscriptionsDetected, 
   onAnalysisComplete 
 }: SubscriptionDetectorWithCallbackProps) {
-  useEffect(() => {
-    const handleSubscriptionUpdate = (event: CustomEvent<DetectedSubscription[]>) => {
-      onSubscriptionsDetected(event.detail);
-      onAnalysisComplete();
-    };
+  const convertTransactions = (plaidTransactions: PlaidTransaction[]): Transaction[] => {
+    return plaidTransactions.map((pt, index) => ({
+      id: index + 1,
+      description: pt.name,
+      amount: Math.abs(pt.amount),
+      date: pt.date,
+      category: pt.category?.[0] || 'Other'
+    }));
+  };
 
-    window.addEventListener('subscriptions-detected', handleSubscriptionUpdate as EventListener);
-    
-    return () => {
-      window.removeEventListener('subscriptions-detected', handleSubscriptionUpdate as EventListener);
-    };
-  }, [onSubscriptionsDetected, onAnalysisComplete]);
-
-  return <SubscriptionDetector transactions={transactions} />;
+  return (
+    <SubscriptionDetector
+      transactions={transactions}
+      onSubscriptionsDetected={(subs) => {
+        const convertedSubs = subs.map(sub => ({
+          ...sub,
+          transactions: convertTransactions(sub.transactions)
+        }));
+        onSubscriptionsDetected(convertedSubs);
+        onAnalysisComplete();
+      }}
+    />
+  );
 }

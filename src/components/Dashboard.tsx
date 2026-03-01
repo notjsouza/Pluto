@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useAuthenticator } from '@aws-amplify/ui-react';
 import { formatCurrency } from '../lib/utils';
 import PlaidLink from './PlaidLink';
 import SubscriptionDetector from './SubscriptionDetector';
@@ -26,6 +27,19 @@ interface DetectedSubscription {
 }
 
 function Dashboard() {
+  const { user } = useAuthenticator((context) => [context.user]);
+
+  const getUserId = (): string => {
+    if (user?.userId) return user.userId;
+    try {
+      const googleUser = JSON.parse(localStorage.getItem('google_user') || 'null');
+      if (googleUser?.email) {
+        return `guser_${btoa(googleUser.email).replace(/[^a-zA-Z0-9]/g, '').slice(0, 40)}`;
+      }
+    } catch {}
+    return 'anonymous-user';
+  };
+
   const [plaidAccounts, setPlaidAccounts] = useState<PlaidAccount[]>([]);
   const [plaidTransactions, setPlaidTransactions] = useState<PlaidTransaction[]>([]);
   const [detectedSubscriptions, setDetectedSubscriptions] = useState<DetectedSubscription[]>([]);
@@ -163,13 +177,14 @@ function Dashboard() {
       new Date(t.date) >= thirtyDaysAgo
     );
 
+    // In Plaid: positive amounts = expenses (money out), negative amounts = income (money in)
     const income = recentTransactions
-      .filter(t => t.amount > 0) 
-      .reduce((sum, t) => sum + t.amount, 0);
-    
-    const expenses = recentTransactions
       .filter(t => t.amount < 0)
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    
+    const expenses = recentTransactions
+      .filter(t => t.amount > 0)
+      .reduce((sum, t) => sum + t.amount, 0);
 
     return {
       monthlyIncome: income,
@@ -200,7 +215,7 @@ function Dashboard() {
               </div>
               <div className="flex gap-4">
                 <PlaidLink 
-                  userId="demo-user-123" 
+                  userId={getUserId()} 
                   onSuccess={handlePlaidSuccess} 
                 />
                 {plaidAccounts.length > 0 && (
@@ -303,8 +318,8 @@ function Dashboard() {
                         <p className="text-sm text-gray-500">{transaction.date}</p>
                       </div>
                     </div>
-                    <p className={`font-semibold whitespace-nowrap flex-shrink-0 ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {transaction.amount > 0 ? '+' : ''}{formatCurrency(transaction.amount)}
+                    <p className={`font-semibold whitespace-nowrap flex-shrink-0 ${transaction.amount < 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {transaction.amount < 0 ? '+' : '-'}{formatCurrency(Math.abs(transaction.amount))}
                     </p>
                   </div>
                 ))}
@@ -422,9 +437,10 @@ function Dashboard() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
+    // In Plaid: positive amounts are expenses
     return plaidTransactions
-      .filter(t => t.amount < 0 && new Date(t.date) >= thirtyDaysAgo)
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      .filter(t => t.amount > 0 && new Date(t.date) >= thirtyDaysAgo)
+      .reduce((sum, t) => sum + t.amount, 0);
   }
 
   function convertDetectedSubscriptions(subscriptions: DetectedSubscription[]) {
