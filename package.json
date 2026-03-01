@@ -11,11 +11,13 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
+    "bootstrap": "bash scripts/bootstrap.sh",
     "amplify:dev": "npx ampx sandbox --profile default",
     "amplify:deploy": "npx ampx pipeline-deploy --branch main --profile default"
   },
   "dependencies": {
     "@aws-amplify/ui-react": "^6.12.0",
+    "aws": "^0.0.3-2",
     "aws-amplify": "^6.15.5",
     "next": "15.5.2",
     "openai": "^5.19.1",
@@ -31,7 +33,7 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/lodash": "^4.17.20",
-    "@types/node": "^20",
+    "@types/node": "^20.19.33",
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.7",
     "aws-cdk-lib": "^2.204.0",
@@ -40,7 +42,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "tailwindcss": "^4",
-    "tsx": "^4.20.5",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

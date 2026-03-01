@@ -115,8 +115,8 @@ export const handler: Handler<LambdaFunctionUrlEvent, LambdaFunctionUrlResponse>
       if (referer && referer.includes('localhost')) {
         redirectUri = 'http://localhost:3000/auth/google/callback';
       } else {
-        const lambdaUrl = `https://${event.requestContext.domainName}`;
-        redirectUri = `${lambdaUrl}/auth/google/callback`;
+        const frontendUrl = process.env.FRONTEND_URL || 'https://master.de1wgui96xpih.amplifyapp.com';
+        redirectUri = `${frontendUrl}/auth/google/callback`;
       }
       
       const scope = 'openid email profile';
@@ -172,8 +172,8 @@ export const handler: Handler<LambdaFunctionUrlEvent, LambdaFunctionUrlResponse>
       if (referer && referer.includes('localhost')) {
         redirectUri = 'http://localhost:3000/auth/google/callback';
       } else {
-        const lambdaUrl = `https://${event.requestContext.domainName}`;
-        redirectUri = `${lambdaUrl}/auth/google/callback`;
+        const frontendUrl = process.env.FRONTEND_URL || 'https://master.de1wgui96xpih.amplifyapp.com';
+        redirectUri = `${frontendUrl}/auth/google/callback`;
       }
 
       const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {

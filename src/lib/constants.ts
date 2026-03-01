@@ -4,7 +4,6 @@ export const CONFIG = {
   API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '/api',
   FRONTEND_URL: process.env.NEXT_PUBLIC_FRONTEND_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'),
   PLAID_ENV: process.env.NEXT_PUBLIC_PLAID_ENV || 'sandbox',
-  OPENAI_API_KEY: process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
   IS_DEVELOPMENT: process.env.NODE_ENV === 'development',
   IS_PRODUCTION: process.env.NODE_ENV === 'production',
 } as const;

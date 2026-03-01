@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { formatCurrency } from '../lib/utils';
 import { PlaidTransaction } from '../lib/plaid';
 
@@ -83,14 +83,14 @@ const detectFrequency = (intervals: number[]): { frequency: DetectedSubscription
   
   if (avgInterval >= 350 && avgInterval <= 380) {
     return { frequency: 'yearly', confidence: consistency };
-  } else if (avgInterval >= 28 && avgInterval <= 35) {
+  } else if (avgInterval >= 25 && avgInterval <= 35) {
     return { frequency: 'monthly', confidence: consistency };
+  } else if (avgInterval >= 36 && avgInterval <= 40) {
+    return { frequency: 'monthly', confidence: consistency * 0.85 };
   } else if (avgInterval >= 13 && avgInterval <= 16) {
     return { frequency: 'biweekly', confidence: consistency };
   } else if (avgInterval >= 6 && avgInterval <= 8) {
     return { frequency: 'weekly', confidence: consistency };
-  } else if (avgInterval >= 25 && avgInterval <= 40) {
-    return { frequency: 'monthly', confidence: consistency * 0.8 };
   }
   
   return { frequency: 'monthly', confidence: 0.3 };
@@ -126,12 +126,16 @@ export default function HybridSubscriptionDetector({ transactions, onSubscriptio
   const [detectedSubscriptions, setDetectedSubscriptions] = useState<DetectedSubscription[]>([]);
   const [totalMonthlyCost, setTotalMonthlyCost] = useState(0);
 
+  const onSubscriptionsDetectedRef = useRef(onSubscriptionsDetected);
+  useEffect(() => { onSubscriptionsDetectedRef.current = onSubscriptionsDetected; });
+
   useEffect(() => {
     const detectSubscriptions = () => {
 
       if (transactions.length === 0) return;
 
-      const expenses = transactions.filter(t => t.amount < 0);
+      // In Plaid: positive amounts = expenses, negative = income
+      const expenses = transactions.filter(t => t.amount > 0);
       const subscriptions: DetectedSubscription[] = [];
       const processedTransactions = new Set<string>();
       
@@ -169,7 +173,12 @@ export default function HybridSubscriptionDetector({ transactions, onSubscriptio
           
           const { frequency, confidence: freqConfidence } = detectFrequency(intervals);
           
-          if (freqConfidence > 0.3) {
+          const countDampener = similarTransactions.length === 2 ? 0.7
+                              : similarTransactions.length === 3 ? 0.85
+                              : 1.0;
+          const adjustedConfidence = freqConfidence * countDampener;
+
+          if (adjustedConfidence > 0.3) {
             const avgAmount = similarTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0) / similarTransactions.length;
             const lastTransaction = sortedTransactions[sortedTransactions.length - 1];
             
@@ -194,7 +203,7 @@ export default function HybridSubscriptionDetector({ transactions, onSubscriptio
               merchantName: transaction1.name,
               category: categorizeSubscription(transaction1.name),
               monthlyEquivalent,
-              confidence: freqConfidence > 0.7 ? 'high' : freqConfidence > 0.5 ? 'medium' : 'low',
+              confidence: adjustedConfidence > 0.7 ? 'high' : adjustedConfidence > 0.5 ? 'medium' : 'low',
               transactions: sortedTransactions,
               detectionMethod: `Fuzzy Pattern (${similarTransactions.length} transactions)`,
               averageInterval: intervals.reduce((sum, i) => sum + i, 0) / intervals.length
@@ -349,13 +358,13 @@ export default function HybridSubscriptionDetector({ transactions, onSubscriptio
       setDetectedSubscriptions(uniqueSubscriptions);
       setTotalMonthlyCost(uniqueSubscriptions.reduce((sum, sub) => sum + sub.monthlyEquivalent, 0));
       
-      if (onSubscriptionsDetected) {
-        onSubscriptionsDetected(uniqueSubscriptions);
+      if (onSubscriptionsDetectedRef.current) {
+        onSubscriptionsDetectedRef.current(uniqueSubscriptions);
       }
     };
 
     detectSubscriptions();
-  }, [transactions, onSubscriptionsDetected]);
+  }, [transactions]);
 
   if (detectedSubscriptions.length === 0) {
     return (
