@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ─── Colors ───────────────────────────────────────────────────────────────────
+# --- Colors -------------------------------------------------------------------
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
@@ -11,18 +11,24 @@ info()    { echo -e "${GREEN}[bootstrap]${NC} $*"; }
 warn()    { echo -e "${YELLOW}[bootstrap]${NC} $*"; }
 error()   { echo -e "${RED}[bootstrap]${NC} $*"; exit 1; }
 
-# ─── Node version check ────────────────────────────────────────────────────────
+# --- Node version check --------------------------------------------------------
 if command -v nvm &>/dev/null || [ -s "$NVM_DIR/nvm.sh" ]; then
   # shellcheck source=/dev/null
   export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
   info "Switching to Node.js version from .nvmrc..."
-  nvm use
+  NVMRC_FILE="$(dirname "$0")/../.nvmrc"
+  if [ -f "$NVMRC_FILE" ]; then
+    NODE_VERSION=$(cat "$NVMRC_FILE" | tr -d '[:space:]')
+    nvm use "$NODE_VERSION" || nvm install "$NODE_VERSION"
+  else
+    nvm use
+  fi
 else
   warn "nvm not found — skipping Node.js version switch (ensure you are on Node 20+)"
 fi
 
-# ─── Check .env.local ─────────────────────────────────────────────────────────
+# --- Check .env.local ---------------------------------------------------------
 ENV_FILE="$(dirname "$0")/../.env.local"
 ENV_FILE="$(realpath "$ENV_FILE")"
 
@@ -32,13 +38,21 @@ fi
 
 info "Loading environment variables from .env.local..."
 
-# Export all non-comment, non-empty lines into the current shell
-set -o allexport
-# shellcheck source=/dev/null
-source "$ENV_FILE"
-set +o allexport
+# Parse and export each valid KEY=VALUE line, stripping carriage returns and
+# ignoring comments/blank lines. Avoids bash interpreting unquoted URL values.
+while IFS= read -r line || [[ -n "$line" ]]; do
+  line="${line//$'\r'/}"                  # strip Windows CR
+  [[ -z "$line" || "$line" == \#* ]] && continue
+  [[ "$line" != *=* ]] && continue
+  key="${line%%=*}"
+  val="${line#*=}"
+  # Strip surrounding quotes if present
+  val="${val%\"}" ; val="${val#\"}"
+  val="${val%\'}" ; val="${val#\'}"
+  export "$key=$val"
+done < "$ENV_FILE"
 
-# ─── Validate required secrets ────────────────────────────────────────────────
+# --- Validate required secrets ------------------------------------------------
 REQUIRED_VARS=(
   GOOGLE_CLIENT_ID
   GOOGLE_CLIENT_SECRET
@@ -64,7 +78,15 @@ if [ ${#MISSING[@]} -gt 0 ]; then
   [[ "$confirm" =~ ^[Yy]$ ]] || exit 1
 fi
 
-# ─── Deploy Amplify sandbox ───────────────────────────────────────────────────
+# --- Build Java Lambda functions ----------------------------------------------
+REPO_ROOT="$(realpath "$(dirname "$0")/..")"
+
+info "Building Java Lambda functions..."
+mvn -f "$REPO_ROOT/amplify/functions/pom.xml" clean package -DskipTests -q \
+  || error "Maven build failed — fix compile errors before deploying."
+info "Java build complete."
+
+# --- Deploy Amplify sandbox ---------------------------------------------------
 info "Starting Amplify sandbox (this will deploy secrets + Lambda functions)..."
 info "Press Ctrl+C at any time to stop the sandbox watcher.\n"
 
